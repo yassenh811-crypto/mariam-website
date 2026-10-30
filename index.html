@@ -1,100 +1,76 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Velvet — مكتبة كتب</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velvet | متجر الكتب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0"></script>
 </head>
-<body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="fl" viewBox="0 0 100 100"><g fill="#c9b3f8" stroke="#9b7de0" stroke-width="2">
-    <ellipse cx="50" cy="22" rx="12" ry="22"/><ellipse cx="50" cy="22" rx="12" ry="22" transform="rotate(72 50 50)"/><ellipse cx="50" cy="22" rx="12" ry="22" transform="rotate(144 50 50)"/><ellipse cx="50" cy="22" rx="12" ry="22" transform="rotate(216 50 50)"/><ellipse cx="50" cy="22" rx="12" ry="22" transform="rotate(288 50 50)"/></g><circle cx="50" cy="50" r="8" fill="#f2b01e"/></symbol>
-</svg>
+<body class="light-mode">
 
-<div id="loader">
-  <div class="fl l"><svg><use href="#fl"/></svg><svg><use href="#fl"/></svg><svg><use href="#fl"/></svg></div>
-  <div id="welcome">أهلاً بكِ في Velvet 🌸</div>
-  <div class="fl r"><svg><use href="#fl"/></svg><svg><use href="#fl"/></svg><svg><use href="#fl"/></svg></div>
-</div>
-<div id="petals"></div>
+    <!-- شاشة الترحيب والأنميشن -->
+    <div id="loader">
+        <div class="fl l">✿</div>
+        <div id="welcome">أهلاً بكِ في Velvet 🌸</div>
+        <div class="fl r">✿</div>
+    </div>
 
-<header>
-  <button id="menuBtn" aria-label="القائمة">☰</button>
-  <a class="logo" href="#"><svg class="fw"><use href="#fl"/></svg><span>Velvet</span><small>مكتبة</small></a>
-  <nav>
-    <a href="#" data-act="nav" data-id="#top">الرئيسية</a>
-    <a href="#" data-act="nav" data-id="#new">جديدنا</a>
-    <a href="#" data-act="nav" data-id="#books">الكتب</a>
-    <a href="#" data-act="nav" data-id="#reviews">آراء العملاء</a>
-    <a href="#" id="adminLink" data-act="opendash" hidden>لوحة المالك</a>
-  </nav>
-  <div class="tools">
-    <button id="themeBtn">🌙</button>
-    <button id="wishBtn">★<sup id="wishN">0</sup></button>
-    <button id="cartBtn">🛒<sup id="cartN">0</sup></button>
-    <button id="authBtn">دخول</button>
-  </div>
-</header>
+    <!-- شريط التنقل -->
+    <header>
+        <div class="logo">Velvet <span>مكتبة</span></div>
+        <div class="tools">
+            <button id="themeBtn">🌙</button>
+            <button id="wishBtn">★ <sup id="wishN">0</sup></button>
+            <button id="cartBtn">🛒 <sup id="cartN">0</sup></button>
+            <button id="authBtn" class="btn-pri">دخول</button>
+        </div>
+    </header>
 
-<div id="sideBg" data-act="closeside"></div>
-<aside id="side">
-  <button data-act="closeside">✕ إغلاق</button>
-  <button data-act="nav" data-id="#top">🏠 الرئيسية</button>
-  <button data-act="nav" data-id="#new">✨ جديدنا</button>
-  <button data-act="togcats">📚 الأقسام</button>
-  <div id="sideCats" hidden></div>
-  <button data-act="nav" data-id="#reviews">💬 آراء العملاء</button>
-  <button id="adminBtn" data-act="opendash" hidden>⚙️ لوحة المالك</button>
-</aside>
+    <!-- لوحة المالك (تظهر عند تسجيل الدخول) -->
+    <div id="dash" hidden>
+        <aside>
+            <h3>لوحة المالك 👑</h3>
+            <button data-act="tab" data-id="over" class="on">📊 نظرة عامة</button>
+            <button data-act="tab" data-id="books">📚 الكتب</button>
+            <button data-act="tab" data-id="orders">🧾 الأوردرات <span id="notifBadge" class="notif" hidden></span></button>
+            <button data-act="closedash">⬅ العودة للموقع</button>
+        </aside>
+        <div id="dc"></div>
+    </div>
 
-<div id="top" class="hero">
-  <svg class="fw big"><use href="#fl"/></svg>
-  <h1>Velvet</h1>
-  <p>كتب تستحق القراءة، بتوصلك لحد باب البيت</p>
-  <a class="btn" href="#" data-act="nav" data-id="#books">تصفّحي الكتب</a>
-</div>
+    <!-- المحتوى الرئيسي -->
+    <main>
+        <div class="hero">
+            <h1>Velvet</h1>
+            <p>كتب تستحق القراءة، بتوصلك لحد باب البيت</p>
+            <a href="#books" class="btn">تصفّحي الكتب</a>
+        </div>
 
-<div class="perks">
-  <div>🚚<b>توصيل لحد البيت</b><small>لكل المحافظات</small></div>
-  <div>💵<b>الدفع عند الاستلام</b><small>للأوردرات الصغيرة</small></div>
-  <div>🔍<b>افحصي كتابك</b><small>قبل ما تستلميه</small></div>
-</div>
+        <section id="new">
+            <h2>✨ جديدنا هذا الأسبوع</h2>
+            <div class="grid" id="newGrid"></div>
+        </section>
 
-<main>
-  <section id="new"><h2>✨ جديدنا هذا الأسبوع</h2><div class="grid" id="newGrid"></div></section>
-  <section id="books">
-    <h2>📚 الكتب</h2>
-    <input id="q" class="search" type="search" placeholder="ابحثي عن كتاب...">
-    <div class="chips" id="chips"></div>
-    <div class="grid" id="grid"></div>
-  </section>
-  <section id="reviews"><h2>💬 آراء العملاء</h2><div id="siteRev"></div></section>
-</main>
+        <section id="books">
+            <h2>📚 جميع الكتب</h2>
+            <div class="chips" id="chips"></div>
+            <div class="grid" id="grid"></div>
+        </section>
 
-<footer><div id="links"></div><p>© Velvet — كل الحقوق محفوظة</p></footer>
+        <section id="reviews">
+            <h2>💬 آراء العملاء</h2>
+            <div id="siteRev"></div>
+        </section>
+    </main>
 
-<dialog id="dlg">
-  <form method="dialog"><button class="x" aria-label="إغلاق">✕</button></form>
-  <div id="dlgBody"></div>
-</dialog>
+    <!-- نافذة منبثقة (Modal) -->
+    <dialog id="dlg">
+        <form method="dialog"><button class="x">✖</button></form>
+        <div id="dlgBody"></div>
+    </dialog>
 
-<div id="dash" hidden></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="config.js"></script>
-<script>
-  // مقدمة الترحيب
-  (function () {
-    var w = document.getElementById('welcome'), l = document.getElementById('loader');
-    setTimeout(function () { w.classList.add('in'); }, 700);
-    setTimeout(function () { w.classList.remove('in'); w.classList.add('out'); }, 2600);
-    setTimeout(function () { l.classList.add('gone'); }, 3200);
-  })();
-</script>
-<script type="module" src="app.js"></script>
+    <script src="app.js" type="module"></script>
 </body>
 </html>
