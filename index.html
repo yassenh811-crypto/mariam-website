@@ -4,22 +4,99 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Velvet | متجر الكتب</title>
+    <!-- خط عربي احترافي -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <!-- مكتبة Supabase -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
-    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* ================= CSS كامل ومدمج ================= */
+        :root {
+            --bg: #f8f6fc; --card: #ffffff; --text: #2d283e; --muted: #8b7ea6;
+            --pri: #9b7edc; --pri-dark: #6c4d9e; --soft: #e6e1f4; --danger: #e74c3c;
+            --shadow: 0 4px 15px rgba(108, 77, 158, 0.1); --radius: 16px;
+        }
+
+        body.dark-mode { --bg: #1a1625; --card: #282139; --text: #f0edf7; --muted: #a99bc1; --soft: #372e4b; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        body { background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
+
+        /* شاشة الترحيب */
+        #loader { position: fixed; inset: 0; z-index: 9999; background: linear-gradient(135deg, #d9c8f2, #a98be0); display: flex; justify-content: center; align-items: center; transition: opacity 0.8s, visibility 0.8s; }
+        #loader.gone { opacity: 0; visibility: hidden; }
+        .fl { font-size: 50px; color: #fff; animation: spin 4s linear infinite; position: absolute; }
+        .fl.l { left: 10%; } .fl.r { right: 10%; animation-direction: reverse; }
+        #welcome { color: #fff; font-size: 2.5rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.2); opacity: 0; transform: translateY(20px); transition: 1s; text-align: center;}
+        #welcome.in { opacity: 1; transform: translateY(0); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* الشريط العلوي */
+        header { position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--soft); }
+        body.dark-mode header { background: rgba(26,22,37,0.95); }
+        .logo { font-size: 1.8rem; font-weight: 800; color: var(--pri-dark); }
+        .logo span { font-size: 1rem; color: var(--muted); font-weight: 400; }
+        .tools { display: flex; gap: 10px; align-items: center; }
+        button, .btn-link { cursor: pointer; border: none; background: var(--soft); color: var(--text); padding: 0.6rem 1rem; border-radius: 12px; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; text-decoration: none; font-size: 1rem; }
+        button:hover { background: var(--pri); color: #fff; transform: translateY(-2px); }
+        .btn-pri { background: var(--pri); color: #fff; }
+        .btn-admin { background: transparent; border: 1px solid var(--pri); color: var(--pri); }
+        .btn-admin:hover { background: var(--pri); color: #fff; }
+        sup { color: var(--danger); font-weight: 800; }
+
+        /* الواجهة الرئيسية */
+        .hero { text-align: center; padding: 5rem 1rem; background: linear-gradient(180deg, var(--soft), transparent); }
+        .hero h1 { font-size: 4rem; color: var(--pri-dark); margin-bottom: 1rem; }
+        .hero p { font-size: 1.2rem; color: var(--muted); }
+        main { max-width: 1200px; margin: auto; padding: 2rem; }
+        section { margin-bottom: 4rem; }
+        h2 { font-size: 2rem; color: var(--pri-dark); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; }
+        h2::after { content: ""; flex: 1; height: 2px; background: var(--soft); }
+
+        /* كروت الكتب */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
+        .card { background: var(--card); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); transition: 0.3s; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(108,77,158,0.2); }
+        .cover { height: 240px; border-radius: 12px; background-color: var(--soft); background-size: cover; background-position: center; display: flex; justify-content: center; align-items: center; text-align: center; color: var(--text); font-weight: 800; font-size: 1.1rem; margin-bottom: 1rem; padding: 1rem; cursor: pointer; border: 1px solid var(--soft); }
+        .card h4 { font-size: 1.1rem; margin-bottom: 0.5rem; cursor: pointer; }
+        .card h4:hover { color: var(--pri); }
+        .card b { color: var(--pri-dark); font-size: 1.2rem; margin-bottom: 1rem; display: block; }
+        
+        /* النوافذ المنبثقة */
+        dialog { border: none; border-radius: var(--radius); padding: 2rem; background: var(--card); color: var(--text); width: min(500px, 90vw); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+        .x { position: absolute; top: 1rem; left: 1rem; background: transparent; font-size: 1.2rem; padding: 0; color: var(--muted); }
+        .x:hover { background: transparent; color: var(--danger); transform: scale(1.1); }
+        dialog input, dialog textarea, dialog select { width: 100%; padding: 0.8rem; border: 1px solid var(--soft); border-radius: 8px; background: var(--bg); color: var(--text); margin-bottom: 1rem; font-family: inherit; }
+        
+        .review-item { background: var(--soft); padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        .review-item .stars { color: #f1c40f; }
+        .add-review { margin-top: 20px; background: var(--bg); padding: 15px; border-radius: 12px; border: 1px solid var(--soft); }
+        .note { font-size: 0.9rem; color: var(--muted); margin-top: 10px;}
+        .note a { color: var(--pri); font-weight: bold; }
+    </style>
 </head>
 <body>
+
+    <!-- شاشة الترحيب (Intro) -->
+    <div id="loader">
+        <div class="fl l">✿</div>
+        <div id="welcome">أهلاً بكِ في Velvet 🌸</div>
+        <div class="fl r">✿</div>
+    </div>
+
+    <!-- الشريط العلوي -->
     <header>
         <div class="logo">Velvet <span>مكتبة</span></div>
         <div class="tools">
             <button id="themeBtn">🌙</button>
             <button id="cartBtn">🛒 <sup id="cartN">0</sup></button>
-            <button id="authBtn" class="btn-admin">دخول / حساب جديد</button>
+            <button id="authBtn" class="btn-admin">دخول / حساب</button>
             <a href="admin.html" id="adminLink" class="btn-pri" style="display:none; text-decoration:none;">لوحة المالك 👑</a>
         </div>
     </header>
 
+    <!-- المحتوى الرئيسي -->
     <main>
         <div class="hero">
             <h1>Velvet</h1>
@@ -31,16 +108,19 @@
         </section>
     </main>
 
+    <!-- نافذة تفاصيل الكتاب -->
     <dialog id="bookModal">
         <form method="dialog"><button class="x">✖</button></form>
         <div id="bookDetails"></div>
     </dialog>
 
+    <!-- نافذة تسجيل الدخول/الإنشاء -->
     <dialog id="authModal">
         <form method="dialog"><button class="x">✖</button></form>
         <div id="authContent"></div>
     </dialog>
 
+    <!-- ربط ملف JS المنفصل -->
     <script src="app.js"></script>
 </body>
 </html>
