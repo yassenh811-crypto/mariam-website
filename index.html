@@ -5,36 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Velvet | متجر الكتب</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
-    <!-- مكتبة Supabase -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- ملف التصميم -->
+    <script src="config.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- شاشة الترحيب -->
-    <div id="loader">
-        <div class="fl l">✿</div>
-        <div id="welcome">أهلاً بكِ في Velvet 🌸</div>
-        <div class="fl r">✿</div>
-    </div>
-
-    <!-- الشريط العلوي -->
     <header>
         <div class="logo">Velvet <span>مكتبة</span></div>
         <div class="tools">
             <button id="themeBtn">🌙</button>
             <button id="cartBtn">🛒 <sup id="cartN">0</sup></button>
-            <button id="authBtn" class="btn-pri">دخول المالك</button>
+            <a href="admin.html" class="btn-admin">دخول المالك</a>
         </div>
     </header>
 
-    <!-- الواجهة الرئيسية للمتجر -->
-    <main id="storeView">
+    <main>
         <div class="hero">
             <h1>Velvet</h1>
             <p>كتب تستحق القراءة، بتوصلك لحد باب البيت</p>
-            <a href="#books" class="btn">تصفّحي الكتب</a>
         </div>
 
         <section id="books">
@@ -45,188 +33,45 @@
         </section>
     </main>
 
-    <!-- لوحة تحكم المالك (مخفية افتراضياً) -->
-    <div id="dash" hidden>
-        <aside>
-            <h3>لوحة المالك 👑</h3>
-            <button onclick="showStore()">⬅ العودة للموقع</button>
-            <button onclick="logout()" style="margin-top: auto; background: var(--danger); color: white;">تسجيل خروج</button>
-        </aside>
-        <div id="dc">
-            <h2>إضافة كتاب جديد</h2>
-            <div style="max-width: 500px; display:flex; flex-direction:column; gap:10px; margin-top:1rem;">
-                <input type="text" id="nTitle" placeholder="اسم الكتاب">
-                <input type="number" id="nPrice" placeholder="السعر (جنيه)">
-                <input type="number" id="nDiscount" placeholder="السعر بعد الخصم (اختياري)">
-                <input type="number" id="nQty" placeholder="الكمية المتاحة">
-                <textarea id="nDesc" placeholder="وصف الكتاب"></textarea>
-                <button onclick="addBook()" class="btn-pri" style="justify-content:center;">حفظ ونشر الكتاب</button>
-            </div>
-            <h3 style="margin-top: 2rem;">الكتب الحالية في المتجر</h3>
-            <div id="adminBooksList" style="margin-top:1rem;"></div>
-        </div>
-    </div>
-
-    <!-- نافذة تسجيل الدخول -->
-    <dialog id="authModal">
-        <form method="dialog"><button class="x">✖</button></form>
-        <h2>تسجيل دخول المالك</h2>
-        <input type="email" id="authEmail" placeholder="البريد الإلكتروني">
-        <input type="password" id="authPassword" placeholder="كلمة المرور">
-        <p id="authError" style="color:red; font-size:0.9rem;"></p>
-        <button id="loginSubmitBtn" class="btn-pri" style="width:100%; justify-content:center;">دخول</button>
-    </dialog>
-
-    <!-- ================= الجافاسكريبت ================= -->
     <script>
-        // 1. بيانات Supabase
-        const SUPABASE_URL = 'https://dfyctdfxwwokszvvgdix.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'sb_publishable_atxSXfoMGnv7Kt1RDmyJmg_lHfi1O81'; 
-
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const sb = supabase.createClient(window.ENV.VITE_SUPABASE_URL, window.ENV.VITE_SUPABASE_ANON_KEY);
         const $ = s => document.querySelector(s);
-        
-        let books = [];
         let cart = JSON.parse(localStorage.getItem('cart') || '{}');
-        let isAdmin = false;
 
-        // 2. إخفاء شاشة الترحيب
-        setTimeout(() => { if($('#welcome')) $('#welcome').classList.add('in'); }, 500);
-        setTimeout(() => { if($('#loader')) $('#loader').classList.add('gone'); }, 2000);
-
-        // 3. الوضع الليلي
+        // الوضع الليلي
         $('#themeBtn').onclick = () => {
             document.body.classList.toggle('dark-mode');
             $('#themeBtn').textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
         };
 
-        // 4. جلب الكتب من Supabase
+        // جلب الكتب
         async function loadBooks() {
-            const grid = $('#grid');
-            try {
-                const { data, error } = await sb.from('books').select('*').order('created_at', { ascending: false });
-                if (error) throw error;
-                
-                books = data || [];
-                
-                if (books.length === 0) {
-                    grid.innerHTML = '<p style="text-align:center; width:100%;">لا توجد كتب حالياً. سجل الدخول كمالك لإضافة كتب.</p>';
-                    return;
-                }
-
-                grid.innerHTML = books.map(b => `
-                    <div class="card">
-                        <div class="cover">${b.title}</div>
-                        <h4>${b.title}</h4>
-                        <b>${b.discount_price ? b.discount_price : b.price} ج</b>
-                        <small style="color:#888; margin-bottom:10px;">${b.quantity} متوفر</small>
-                        <button onclick="addToCart('${b.id}')" style="margin-top:auto; justify-content:center;">أضف للسلة</button>
-                    </div>
-                `).join('');
-                
-                if (isAdmin) renderAdminBooks();
-            } catch (err) {
-                console.error(err);
-                grid.innerHTML = '<p style="text-align:center; color:red;">حدث خطأ في جلب البيانات.</p>';
+            const { data, error } = await sb.from('books').select('*').order('created_at', { ascending: false });
+            if (error) return $('#grid').innerHTML = '<p>حدث خطأ في تحميل الكتب.</p>';
+            
+            if (data.length === 0) {
+                return $('#grid').innerHTML = '<p>لا توجد كتب حالياً.</p>';
             }
+
+            $('#grid').innerHTML = data.map(b => `
+                <div class="card">
+                    <div class="cover">${b.title}</div>
+                    <h4>${b.title}</h4>
+                    <b>${b.discount_price || b.price} ج</b>
+                    <button onclick="addToCart('${b.id}')" class="btn-pri">أضف للسلة</button>
+                </div>
+            `).join('');
         }
 
-        // 5. السلة
+        // السلة
         window.addToCart = (id) => {
             cart[id] = (cart[id] || 0) + 1;
             localStorage.setItem('cart', JSON.stringify(cart));
             $('#cartN').innerText = Object.values(cart).reduce((a, b) => a + b, 0);
             alert('تمت الإضافة للسلة!');
         };
+
         $('#cartN').innerText = Object.values(cart).reduce((a, b) => a + b, 0);
-
-        // 6. نافذة تسجيل الدخول
-        const authModal = $('#authModal');
-        $('#authBtn').onclick = () => {
-            if (isAdmin) {
-                showDash();
-            } else {
-                authModal.showModal();
-            }
-        };
-
-        $('#loginSubmitBtn').onclick = async (e) => {
-            e.preventDefault();
-            const email = $('#authEmail').value;
-            const password = $('#authPassword').value;
-            const errEl = $('#authError');
-            
-            const { data, error } = await sb.auth.signInWithPassword({ email, password });
-            
-            if (error) {
-                errEl.innerText = error.message;
-            } else {
-                isAdmin = true;
-                authModal.close();
-                $('#authBtn').innerText = 'لوحة التحكم';
-                showDash();
-                loadBooks();
-            }
-        };
-
-        // 7. لوحة التحكم
-        window.showDash = () => {
-            $('#storeView').hidden = true;
-            $('#dash').hidden = false;
-            renderAdminBooks();
-        };
-
-        window.showStore = () => {
-            $('#dash').hidden = true;
-            $('#storeView').hidden = false;
-        };
-
-        window.logout = async () => {
-            await sb.auth.signOut();
-            isAdmin = false;
-            $('#authBtn').innerText = 'دخول المالك';
-            showStore();
-            location.reload();
-        };
-
-        // 8. إضافة كتاب (للمالك)
-        window.addBook = async () => {
-            const title = $('#nTitle').value;
-            const price = $('#nPrice').value;
-            const discount = $('#nDiscount').value || null;
-            const qty = $('#nQty').value;
-            const desc = $('#nDesc').value;
-
-            if (!title || !price || !qty) return alert('املأ الحقول الأساسية');
-
-            const { error } = await sb.from('books').insert([{
-                title: title,
-                price: Number(price),
-                discount_price: discount ? Number(discount) : null,
-                quantity: Number(qty),
-                description: desc
-            }]);
-
-            if (error) {
-                alert('خطأ: ' + error.message);
-            } else {
-                alert('تمت إضافة الكتاب بنجاح!');
-                $('#nTitle').value = ''; $('#nPrice').value = ''; $('#nDiscount').value = ''; $('#nQty').value = ''; $('#nDesc').value = '';
-                loadBooks();
-            }
-        };
-
-        // 9. عرض الكتب في لوحة التحكم
-        window.renderAdminBooks = () => {
-            $('#adminBooksList').innerHTML = books.map(b => `
-                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #ddd; padding:10px 0;">
-                    <span>${b.title} (الكمية: ${b.quantity})</span>
-                    <b>${b.price} ج</b>
-                </div>
-            `).join('');
-        };
-
-        // التشغيل
         loadBooks();
     </script>
 </body>

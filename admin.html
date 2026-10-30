@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المالك | Velvet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+    <div id="authView" class="auth-view">
+        <div class="auth-box">
+            <h2>تسجيل دخول المالك 👑</h2>
+            <input type="email" id="email" placeholder="البريد الإلكتروني">
+            <input type="password" id="password" placeholder="كلمة المرور">
+            <button onclick="login()" class="btn-pri">دخول</button>
+            <p id="error" style="color:red; margin-top:10px;"></p>
+            <a href="index.html" style="display:block; margin-top:15px; color:var(--muted);">العودة للمتجر</a>
+        </div>
+    </div>
+
+    <div id="dashView" class="dash-view" hidden>
+        <aside class="sidebar">
+            <h3>Velvet Admin</h3>
+            <button onclick="logout()" class="btn-logout">تسجيل خروج</button>
+            <a href="index.html" class="btn-link">الذهاب للمتجر</a>
+        </aside>
+        <main class="dash-content">
+            <h2>إضافة كتاب جديد</h2>
+            <div class="form-group">
+                <input type="text" id="title" placeholder="اسم الكتاب">
+                <input type="number" id="price" placeholder="السعر (جنيه)">
+                <input type="number" id="discount" placeholder="السعر بعد الخصم (اختياري)">
+                <input type="number" id="qty" placeholder="الكمية المتاحة">
+                <textarea id="desc" placeholder="وصف الكتاب"></textarea>
+                <button onclick="addBook()" class="btn-pri">حفظ ونشر الكتاب</button>
+            </div>
+            <h3>الكتب الحالية</h3>
+            <div id="booksList" class="books-list"></div>
+        </main>
+    </div>
+
+    <script>
+        const sb = supabase.createClient(window.ENV.VITE_SUPABASE_URL, window.ENV.VITE_SUPABASE_ANON_KEY);
+        const $ = s => document.querySelector(s);
+
+        // تسجيل الدخول
+        window.login = async () => {
+            const email = $('#email').value;
+            const password = $('#password').value;
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) return $('#error').innerText = error.message;
+            showDash();
+        };
+
+        // عرض لوحة التحكم
+        const showDash = () => {
+            $('#authView').hidden = true;
+            $('#dashView').hidden = false;
+            loadBooks();
+        };
+
+        // تسجيل الخروج
+        window.logout = async () => {
+            await sb.auth.signOut();
+            location.reload();
+        };
+
+        // إضافة كتاب
+        window.addBook = async () => {
+            const title = $('#title').value, price = $('#price').value, discount = $('#discount').value, qty = $('#qty').value, desc = $('#desc').value;
+            if(!title || !price || !qty) return alert('املأ البيانات الأساسية');
+            
+            const { error } = await sb.from('books').insert([{ title, price, discount_price: discount || null, quantity: qty, description: desc }]);
+            if(error) alert('خطأ: ' + error.message);
+            else {
+                alert('تمت الإضافة!');
+                $('#title').value = ''; $('#price').value = ''; $('#discount').value = ''; $('#qty').value = ''; $('#desc').value = '';
+                loadBooks();
+            }
+        };
+
+        // جلب الكتب في اللوحة
+        async function loadBooks() {
+            const { data } = await sb.from('books').select('*');
+            $('#booksList').innerHTML = (data || []).map(b => `
+                <div class="admin-book-row">
+                    <span><b>${b.title}</b> (الكمية: ${b.quantity})</span>
+                    <span>${b.price} ج</span>
+                </div>
+            `).join('');
+        }
+
+        // التحقق من الجلسة
+        sb.auth.getSession().then(({ data: { session } }) => {
+            if (session) showDash();
+        });
+    </script>
+</body>
+</html>
