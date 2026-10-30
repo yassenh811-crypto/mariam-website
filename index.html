@@ -5,40 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Velvet | متجر الكتب</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0"></script>
+    
+    <style>
+        /* ================= التصميم (CSS) ================= */
+        :root {
+            --bg: #f8f6fc; --card: #ffffff; --text: #2d283e; --muted: #8b7ea6;
+            --pri: #9b7edc; --pri-dark: #6c4d9e; --soft: #e6e1f4; --danger: #e74c3c;
+            --shadow: 0 4px 15px rgba(108, 77, 158, 0.1); --radius: 16px;
+        }
+
+        body.dark-mode {
+            --bg: #1a1625; --card: #282139; --text: #f0edf7; --muted: #a99bc1; --soft: #372e4b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        body { background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
+
+        /* شاشة الترحيب */
+        #loader { position: fixed; inset: 0; z-index: 9999; background: linear-gradient(135deg, #d9c8f2, #a98be0); display: flex; justify-content: center; align-items: center; transition: opacity 0.8s, visibility 0.8s; }
+        #loader.gone { opacity: 0; visibility: hidden; }
+        .fl { font-size: 50px; color: #fff; animation: spin 4s linear infinite; position: absolute; }
+        .fl.l { left: 10%; } .fl.r { right: 10%; animation-direction: reverse; }
+        #welcome { color: #fff; font-size: 2.5rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.2); opacity: 0; transform: translateY(20px); transition: 1s; }
+        #welcome.in { opacity: 1; transform: translateY(0); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* الشريط العلوي */
+        header { position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--soft); }
+        body.dark-mode header { background: rgba(26,22,37,0.9); }
+        .logo { font-size: 1.8rem; font-weight: 800; color: var(--pri-dark); }
+        .logo span { font-size: 1rem; color: var(--muted); font-weight: 400; }
+        .tools { display: flex; gap: 10px; }
+        button { cursor: pointer; border: none; background: var(--soft); color: var(--text); padding: 0.6rem 1rem; border-radius: 12px; font-weight: 700; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        button:hover { background: var(--pri); color: #fff; transform: translateY(-2px); }
+        .btn-pri { background: var(--pri); color: #fff; }
+        sup { color: var(--danger); font-weight: 800; }
+
+        /* الواجهة الرئيسية */
+        .hero { text-align: center; padding: 5rem 1rem; background: linear-gradient(180deg, var(--soft), transparent); }
+        .hero h1 { font-size: 4rem; color: var(--pri-dark); margin-bottom: 1rem; }
+        .hero p { font-size: 1.2rem; color: var(--muted); margin-bottom: 2rem; }
+        .btn { display: inline-block; background: var(--pri); color: #fff; padding: 0.8rem 2rem; border-radius: 30px; text-decoration: none; font-weight: 700; transition: 0.3s; }
+        .btn:hover { background: var(--pri-dark); transform: scale(1.05); }
+
+        main { max-width: 1200px; margin: auto; padding: 2rem; }
+        section { margin-bottom: 4rem; }
+        h2 { font-size: 2rem; color: var(--pri-dark); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; }
+        h2::after { content: ""; flex: 1; height: 2px; background: var(--soft); }
+
+        /* كروت الكتب */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 2rem; }
+        .card { background: var(--card); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); transition: 0.3s; position: relative; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(108,77,158,0.2); }
+        .cover { height: 200px; border-radius: 12px; background: linear-gradient(135deg, var(--pri), #c9b6f2); display: flex; justify-content: center; align-items: center; text-align: center; color: #fff; font-weight: 800; font-size: 1.2rem; margin-bottom: 1rem; padding: 1rem; }
+        .card h4 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .card b { color: var(--pri-dark); font-size: 1.2rem; }
+        
+        /* لوحة التحكم */
+        #dash { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: grid; grid-template-columns: 250px 1fr; }
+        #dash aside { background: var(--card); padding: 2rem 1rem; border-left: 1px solid var(--soft); display: flex; flex-direction: column; gap: 10px; }
+        #dash aside button { background: transparent; text-align: right; justify-content: flex-start; }
+        #dash aside button.on { background: var(--pri); color: #fff; }
+        #dc { padding: 2rem; overflow-y: auto; }
+
+        /* المودال */
+        dialog { border: none; border-radius: var(--radius); padding: 2rem; background: var(--card); color: var(--text); width: min(500px, 90vw); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
+        .x { position: absolute; top: 1rem; left: 1rem; background: transparent; font-size: 1.2rem; padding: 0; }
+        input, textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--soft); border-radius: 8px; background: var(--bg); color: var(--text); margin-bottom: 1rem; font-family: inherit; }
+    </style>
 </head>
 <body class="light-mode">
 
-    <!-- شاشة الترحيب والأنميشن -->
+    <!-- شاشة الترحيب -->
     <div id="loader">
         <div class="fl l">✿</div>
         <div id="welcome">أهلاً بكِ في Velvet 🌸</div>
         <div class="fl r">✿</div>
     </div>
 
-    <!-- شريط التنقل -->
+    <!-- الشريط العلوي -->
     <header>
         <div class="logo">Velvet <span>مكتبة</span></div>
         <div class="tools">
             <button id="themeBtn">🌙</button>
-            <button id="wishBtn">★ <sup id="wishN">0</sup></button>
             <button id="cartBtn">🛒 <sup id="cartN">0</sup></button>
             <button id="authBtn" class="btn-pri">دخول</button>
         </div>
     </header>
-
-    <!-- لوحة المالك (تظهر عند تسجيل الدخول) -->
-    <div id="dash" hidden>
-        <aside>
-            <h3>لوحة المالك 👑</h3>
-            <button data-act="tab" data-id="over" class="on">📊 نظرة عامة</button>
-            <button data-act="tab" data-id="books">📚 الكتب</button>
-            <button data-act="tab" data-id="orders">🧾 الأوردرات <span id="notifBadge" class="notif" hidden></span></button>
-            <button data-act="closedash">⬅ العودة للموقع</button>
-        </aside>
-        <div id="dc"></div>
-    </div>
 
     <!-- المحتوى الرئيسي -->
     <main>
@@ -48,29 +102,117 @@
             <a href="#books" class="btn">تصفّحي الكتب</a>
         </div>
 
-        <section id="new">
-            <h2>✨ جديدنا هذا الأسبوع</h2>
-            <div class="grid" id="newGrid"></div>
-        </section>
-
         <section id="books">
             <h2>📚 جميع الكتب</h2>
-            <div class="chips" id="chips"></div>
-            <div class="grid" id="grid"></div>
-        </section>
-
-        <section id="reviews">
-            <h2>💬 آراء العملاء</h2>
-            <div id="siteRev"></div>
+            <div class="grid" id="grid">
+                <p style="text-align:center; width:100%;">جاري تحميل الكتب...</p>
+            </div>
         </section>
     </main>
 
-    <!-- نافذة منبثقة (Modal) -->
+    <!-- لوحة المالك -->
+    <div id="dash" hidden>
+        <aside>
+            <h3>لوحة المالك 👑</h3>
+            <button onclick="logout()">⬅ العودة للموقع</button>
+        </aside>
+        <div id="dc">
+            <h2>مرحباً بك في لوحة التحكم</h2>
+            <p>يمكنك إدارة الكتب والأوردرات من هنا.</p>
+        </div>
+    </div>
+
+    <!-- نافذة منبثقة -->
     <dialog id="dlg">
         <form method="dialog"><button class="x">✖</button></form>
         <div id="dlgBody"></div>
     </dialog>
 
-    <script src="app.js" type="module"></script>
+    <!-- ================= الجافاسكريبت (JS) ================= -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/+esm';
+
+        // 1. بيانات Supabase الخاصة بك
+        const SUPABASE_URL = 'https://dfyctdfxwwokszvvgdix.supabase.co'; // تأكد من الرابط
+        const SUPABASE_ANON_KEY = 'sb_publishable_atxSXfoMGnv7Kt1RDmyJmg_lHfi1O81'; // تأكد من المفتاح
+
+        const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const $ = s => document.querySelector(s);
+        
+        let books = [], cart = JSON.parse(localStorage.getItem('cart') || '{}'), user = null;
+
+        // 2. إخفاء شاشة الترحيب فوراً
+        setTimeout(() => { 
+            $('#welcome').classList.add('in'); 
+        }, 500);
+        setTimeout(() => { 
+            $('#loader').classList.add('gone'); 
+        }, 2000);
+
+        // 3. الوضع الليلي
+        $('#themeBtn').onclick = () => {
+            document.body.classList.toggle('dark-mode');
+            $('#themeBtn').textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        };
+
+        // 4. جلب الكتب من Supabase
+        async function loadBooks() {
+            const grid = $('#grid');
+            try {
+                const { data, error } = await sb.from('books').select('*').order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                if (data.length === 0) {
+                    grid.innerHTML = '<p style="text-align:center; width:100%;">لا توجد كتب في قاعدة البيانات حالياً.</p>';
+                    return;
+                }
+
+                grid.innerHTML = data.map(b => `
+                    <div class="card">
+                        <div class="cover">${b.title}</div>
+                        <h4>${b.title}</h4>
+                        <b>${b.discount_price ? b.discount_price : b.price} ج</b>
+                        <button onclick="addToCart('${b.id}')" style="margin-top:1rem; justify-content:center;">أضف للسلة</button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = '<p style="text-align:center; width:100%; color:red;">حدث خطأ في جلب البيانات. تأكد من إعدادات Supabase.</p>';
+            }
+        }
+
+        // 5. السلة
+        window.addToCart = (id) => {
+            cart[id] = (cart[id] || 0) + 1;
+            localStorage.setItem('cart', JSON.stringify(cart));
+            $('#cartN').innerText = Object.values(cart).reduce((a, b) => a + b, 0);
+        };
+
+        // 6. تسجيل الدخول
+        $('#authBtn').onclick = async () => {
+            const email = prompt('البريد الإلكتروني:');
+            if(!email) return;
+            const password = prompt('كلمة المرور:');
+            if(!password) return;
+            
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) return alert('خطأ: ' + error.message);
+            
+            user = data.user;
+            $('#authBtn').innerText = 'خروج';
+            $('#dash').hidden = false; // إظهار لوحة التحكم
+        };
+
+        window.logout = () => {
+            sb.auth.signOut();
+            user = null;
+            $('#authBtn').innerText = 'دخول';
+            $('#dash').hidden = true;
+        };
+
+        // التشغيل
+        loadBooks();
+    </script>
 </body>
 </html>
