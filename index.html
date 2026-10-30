@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Velvet | متجر الكتب</title>
-    <!-- خط عربي -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
-    <!-- مكتبة Supabase (نسخة مستقرة) -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- ملف التصميم -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -26,12 +23,12 @@
         <div class="tools">
             <button id="themeBtn">🌙</button>
             <button id="cartBtn">🛒 <sup id="cartN">0</sup></button>
-            <button id="authBtn" class="btn-pri">دخول</button>
+            <button id="authBtn" class="btn-pri">دخول المالك</button>
         </div>
     </header>
 
-    <!-- المحتوى الرئيسي -->
-    <main>
+    <!-- الواجهة الرئيسية -->
+    <main id="storeView">
         <div class="hero">
             <h1>Velvet</h1>
             <p>كتب تستحق القراءة، بتوصلك لحد باب البيت</p>
@@ -46,44 +43,53 @@
         </section>
     </main>
 
-    <!-- نافذة منبثقة (للسلة وتسجيل الدخول) -->
+    <!-- لوحة تحكم المالك (مخفية) -->
+    <div id="dash" hidden>
+        <aside>
+            <h3>لوحة المالك 👑</h3>
+            <button onclick="closeDash()">⬅ العودة للموقع</button>
+            <button onclick="logout()" style="margin-top: auto; background: var(--danger); color: white;">تسجيل خروج</button>
+        </aside>
+        <div id="dc">
+            <h2>مرحباً بك في لوحة التحكم</h2>
+            <p>يمكنك إدارة الكتب والأوردرات من هنا.</p>
+        </div>
+    </div>
+
+    <!-- نافذة منبثقة -->
     <dialog id="dlg">
         <form method="dialog"><button class="x">✖</button></form>
         <div id="dlgBody"></div>
     </dialog>
 
-    <!-- ================= الجافاسكريبت (داخل الملف) ================= -->
+    <!-- ================= الجافاسكريبت ================= -->
     <script>
         // 1. بيانات Supabase
         const SUPABASE_URL = 'https://dfyctdfxwwokszvvgdix.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_atxSXfoMGnv7Kt1RDmyJmg_lHfi1O81'; 
 
-        // 2. تهيئة قاعدة البيانات
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const $ = s => document.querySelector(s);
         
         let books = [];
         let cart = JSON.parse(localStorage.getItem('cart') || '{}');
+        let user = null;
 
-        // 3. إخفاء شاشة الترحيب بعد ثانيتين
-        setTimeout(() => { 
-            if($('#welcome')) $('#welcome').classList.add('in'); 
-        }, 500);
-        setTimeout(() => { 
-            if($('#loader')) $('#loader').classList.add('gone'); 
-        }, 2000);
+        // 2. إخفاء شاشة الترحيب
+        setTimeout(() => { if($('#welcome')) $('#welcome').classList.add('in'); }, 500);
+        setTimeout(() => { if($('#loader')) $('#loader').classList.add('gone'); }, 2000);
 
-        // 4. الوضع الليلي
+        // 3. الوضع الليلي
         $('#themeBtn').onclick = () => {
             document.body.classList.toggle('dark-mode');
             $('#themeBtn').textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
         };
 
-        // 5. جلب الكتب من قاعدة البيانات
+        // 4. جلب الكتب
         async function loadBooks() {
             const grid = $('#grid');
             try {
-                const { data, error } = await sb.from('books').select('*').order('created_at', { ascending: false });
+                const { data, error } = await sb.from('books').select('*');
                 if (error) throw error;
                 
                 if (data.length === 0) {
@@ -102,21 +108,54 @@
                 `).join('');
             } catch (err) {
                 console.error(err);
-                grid.innerHTML = '<p style="text-align:center; color:red;">حدث خطأ في جلب البيانات. تأكد من إعدادات قاعدة البيانات (RLS).</p>';
+                grid.innerHTML = '<p style="text-align:center; color:red;">حدث خطأ في جلب البيانات.</p>';
             }
         }
 
-        // 6. وظيفة السلة
+        // 5. السلة
         window.addToCart = (id) => {
             cart[id] = (cart[id] || 0) + 1;
             localStorage.setItem('cart', JSON.stringify(cart));
             $('#cartN').innerText = Object.values(cart).reduce((a, b) => a + b, 0);
             alert('تمت الإضافة للسلة!');
         };
-
-        // 7. تشغيل الموقع
-        loadBooks();
         $('#cartN').innerText = Object.values(cart).reduce((a, b) => a + b, 0);
+
+        // 6. تسجيل الدخول للمالك
+        $('#authBtn').onclick = async () => {
+            if (user) return; // إذا كان مسجل بالفعل
+
+            const email = prompt('البريد الإلكتروني للمالك:');
+            if(!email) return;
+            const password = prompt('كلمة المرور:');
+            if(!password) return;
+            
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) return alert('خطأ في الدخول: ' + error.message);
+            
+            user = data.user;
+            $('#authBtn').innerText = 'لوحة التحكم';
+            $('#authBtn').onclick = () => { $('#storeView').hidden = true; $('#dash').hidden = false; };
+            
+            alert('تم تسجيل الدخول بنجاح!');
+        };
+
+        // 7. إغلاق لوحة التحكم
+        window.closeDash = () => {
+            $('#dash').hidden = true;
+            $('#storeView').hidden = false;
+        };
+
+        // 8. تسجيل الخروج
+        window.logout = async () => {
+            await sb.auth.signOut();
+            user = null;
+            $('#authBtn').innerText = 'دخول المالك';
+            location.reload(); // إعادة تحميل الصفحة لتصفير كل شيء
+        };
+
+        // التشغيل
+        loadBooks();
     </script>
 </body>
 </html>
