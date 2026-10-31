@@ -127,6 +127,28 @@
     <div class="footer-bottom"><span>© <span id="footer-year"></span> Velvet. جميع الحقوق محفوظة.</span><span>صُنع بحب لعشاق الكتب ✿</span></div>
   </footer>
 
+  <!-- Fallback مستقل: يخفي شاشة الشعار حتى لو فشل تحميل ملفات JavaScript. -->
+  <script>
+    (function () {
+      function releaseIntro() {
+        var intro = document.getElementById('intro');
+        if (intro) {
+          intro.classList.add('intro-hidden');
+          window.setTimeout(function () { intro.remove(); }, 750);
+        }
+        if (!window.__VELVET_APP_STARTED__) {
+          var target = document.getElementById('all-books-grid');
+          if (target) {
+            target.innerHTML = '<div class="setup-note"><strong>تعذر تشغيل ملفات المتجر.</strong><p>تأكد من نشر نسخة البناء الناتجة عن الأمر npm run build، وليس ملفات المصدر مباشرة. افتح سجل النشر لمعرفة الخطأ.</p></div>';
+          }
+        }
+      }
+      window.setTimeout(releaseIntro, 3500);
+      window.addEventListener('error', function (event) {
+        if (event.target && event.target.tagName === 'SCRIPT') releaseIntro();
+      }, true);
+    })();
+  </script>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

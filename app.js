@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
+// علامة تؤكد أن ملف التطبيق بدأ التحميل بنجاح.
+window.__VELVET_APP_STARTED__ = true;
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const hasConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
@@ -802,4 +805,13 @@ async function init() {
   });
 }
 
-init();
+init().catch((error) => {
+  console.error('Velvet startup error:', error);
+  const intro = document.getElementById('intro');
+  intro?.classList.add('intro-hidden');
+  window.setTimeout(() => intro?.remove(), 750);
+  const target = document.getElementById('all-books-grid');
+  if (target) {
+    target.innerHTML = '<div class="setup-note"><strong>حصل خطأ أثناء تشغيل المتجر.</strong><p>افتح أدوات المطور ثم Console لمعرفة السبب، وتأكد من إعداد متغيرات Supabase في الاستضافة.</p></div>';
+  }
+});
