@@ -1,126 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Velvet | متجر الكتب</title>
-    <!-- خط عربي احترافي -->
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
-    <!-- مكتبة Supabase -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <style>
-        /* ================= CSS كامل ومدمج ================= */
-        :root {
-            --bg: #f8f6fc; --card: #ffffff; --text: #2d283e; --muted: #8b7ea6;
-            --pri: #9b7edc; --pri-dark: #6c4d9e; --soft: #e6e1f4; --danger: #e74c3c;
-            --shadow: 0 4px 15px rgba(108, 77, 158, 0.1); --radius: 16px;
-        }
-
-        body.dark-mode { --bg: #1a1625; --card: #282139; --text: #f0edf7; --muted: #a99bc1; --soft: #372e4b; }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
-        body { background: var(--bg); color: var(--text); transition: 0.3s; overflow-x: hidden; }
-
-        /* شاشة الترحيب */
-        #loader { position: fixed; inset: 0; z-index: 9999; background: linear-gradient(135deg, #d9c8f2, #a98be0); display: flex; justify-content: center; align-items: center; transition: opacity 0.8s, visibility 0.8s; }
-        #loader.gone { opacity: 0; visibility: hidden; }
-        .fl { font-size: 50px; color: #fff; animation: spin 4s linear infinite; position: absolute; }
-        .fl.l { left: 10%; } .fl.r { right: 10%; animation-direction: reverse; }
-        #welcome { color: #fff; font-size: 2.5rem; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.2); opacity: 0; transform: translateY(20px); transition: 1s; text-align: center;}
-        #welcome.in { opacity: 1; transform: translateY(0); }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* الشريط العلوي */
-        header { position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--soft); }
-        body.dark-mode header { background: rgba(26,22,37,0.95); }
-        .logo { font-size: 1.8rem; font-weight: 800; color: var(--pri-dark); }
-        .logo span { font-size: 1rem; color: var(--muted); font-weight: 400; }
-        .tools { display: flex; gap: 10px; align-items: center; }
-        button, .btn-link { cursor: pointer; border: none; background: var(--soft); color: var(--text); padding: 0.6rem 1rem; border-radius: 12px; font-weight: 700; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; text-decoration: none; font-size: 1rem; }
-        button:hover { background: var(--pri); color: #fff; transform: translateY(-2px); }
-        .btn-pri { background: var(--pri); color: #fff; }
-        .btn-admin { background: transparent; border: 1px solid var(--pri); color: var(--pri); }
-        .btn-admin:hover { background: var(--pri); color: #fff; }
-        sup { color: var(--danger); font-weight: 800; }
-
-        /* الواجهة الرئيسية */
-        .hero { text-align: center; padding: 5rem 1rem; background: linear-gradient(180deg, var(--soft), transparent); }
-        .hero h1 { font-size: 4rem; color: var(--pri-dark); margin-bottom: 1rem; }
-        .hero p { font-size: 1.2rem; color: var(--muted); }
-        main { max-width: 1200px; margin: auto; padding: 2rem; }
-        section { margin-bottom: 4rem; }
-        h2 { font-size: 2rem; color: var(--pri-dark); margin-bottom: 2rem; display: flex; align-items: center; gap: 10px; }
-        h2::after { content: ""; flex: 1; height: 2px; background: var(--soft); }
-
-        /* كروت الكتب */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
-        .card { background: var(--card); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); transition: 0.3s; display: flex; flex-direction: column; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(108,77,158,0.2); }
-        .cover { height: 240px; border-radius: 12px; background-color: var(--soft); background-size: cover; background-position: center; display: flex; justify-content: center; align-items: center; text-align: center; color: var(--text); font-weight: 800; font-size: 1.1rem; margin-bottom: 1rem; padding: 1rem; cursor: pointer; border: 1px solid var(--soft); }
-        .card h4 { font-size: 1.1rem; margin-bottom: 0.5rem; cursor: pointer; }
-        .card h4:hover { color: var(--pri); }
-        .card b { color: var(--pri-dark); font-size: 1.2rem; margin-bottom: 1rem; display: block; }
-        
-        /* النوافذ المنبثقة */
-        dialog { border: none; border-radius: var(--radius); padding: 2rem; background: var(--card); color: var(--text); width: min(500px, 90vw); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
-        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); }
-        .x { position: absolute; top: 1rem; left: 1rem; background: transparent; font-size: 1.2rem; padding: 0; color: var(--muted); }
-        .x:hover { background: transparent; color: var(--danger); transform: scale(1.1); }
-        dialog input, dialog textarea, dialog select { width: 100%; padding: 0.8rem; border: 1px solid var(--soft); border-radius: 8px; background: var(--bg); color: var(--text); margin-bottom: 1rem; font-family: inherit; }
-        
-        .review-item { background: var(--soft); padding: 10px; border-radius: 8px; margin-bottom: 10px; }
-        .review-item .stars { color: #f1c40f; }
-        .add-review { margin-top: 20px; background: var(--bg); padding: 15px; border-radius: 12px; border: 1px solid var(--soft); }
-        .note { font-size: 0.9rem; color: var(--muted); margin-top: 10px;}
-        .note a { color: var(--pri); font-weight: bold; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f8f4fb" />
+  <meta name="description" content="Velvet — مكتبة كتب مختارة بتجربة تسوق هادئة وأنيقة." />
+  <link rel="stylesheet" href="/style.css" />
+  <title>Velvet | مكتبة الكتب</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
+  <div id="intro" class="intro" aria-hidden="true">
+    <div class="intro-flowers intro-flowers-right">✿ ❀ ✿</div>
+    <div class="intro-center"><span class="brand-mark">V</span><p>أهلاً بك في <strong>Velvet</strong></p></div>
+    <div class="intro-flowers intro-flowers-left">❀ ✿ ❀</div>
+  </div>
 
-    <!-- شاشة الترحيب (Intro) -->
-    <div id="loader">
-        <div class="fl l">✿</div>
-        <div id="welcome">أهلاً بكِ في Velvet 🌸</div>
-        <div class="fl r">✿</div>
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#home" aria-label="Velvet - الرئيسية"><span class="brand-mark">V</span><span>Velvet</span></a>
+    <nav class="main-nav" id="main-nav">
+      <a href="#home">الرئيسية</a>
+      <a href="#all-books">الكتب</a>
+      <a href="#new-books">أضيف حديثاً</a>
+      <a href="#categories">التصنيفات</a>
+      <a href="#reviews">مراجعات Velvet</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button" data-action="open-search" aria-label="بحث" title="بحث">⌕</button>
+      <button class="icon-button" data-action="open-wishlist" aria-label="قائمة الأمنيات" title="قائمة الأمنيات">☆</button>
+      <button class="icon-button cart-icon" data-action="open-cart" aria-label="سلة المشتريات" title="سلة المشتريات">🛍<span id="cart-count" class="count-badge">0</span></button>
+      <button class="icon-button" data-action="toggle-theme" aria-label="تغيير المظهر" title="الوضع الليلي والنهاري">◐</button>
+      <button class="button button-soft button-small" id="account-button" data-action="account">تسجيل الدخول</button>
     </div>
+  </header>
 
-    <!-- الشريط العلوي -->
-    <header>
-        <div class="logo">Velvet <span>مكتبة</span></div>
-        <div class="tools">
-            <button id="themeBtn">🌙</button>
-            <button id="cartBtn">🛒 <sup id="cartN">0</sup></button>
-            <button id="authBtn" class="btn-admin">دخول / حساب</button>
-            <a href="admin.html" id="adminLink" class="btn-pri" style="display:none; text-decoration:none;">لوحة المالك 👑</a>
-        </div>
-    </header>
+  <button id="store-sidebar-toggle" class="store-sidebar-toggle" data-action="toggle-store-sidebar" aria-label="فتح القائمة الجانبية" aria-expanded="false">☰</button>
+  <div id="store-sidebar-scrim" class="store-sidebar-scrim" data-action="close-store-sidebar"></div>
+  <aside id="store-sidebar" class="store-sidebar" aria-label="القائمة الجانبية" aria-hidden="true">
+    <div class="store-sidebar-head">
+      <a class="brand" href="#home"><span class="brand-mark">V</span><span>Velvet</span></a>
+      <button class="icon-button" data-action="close-store-sidebar" aria-label="إغلاق القائمة">×</button>
+    </div>
+    <p class="store-sidebar-caption">تصفّح المتجر</p>
+    <nav class="store-sidebar-links">
+      <a href="#home">⌂ <span>الرئيسية</span></a>
+      <a href="#all-books">▤ <span>كل الكتب</span></a>
+      <a href="#new-books">✦ <span>أضيف حديثاً</span></a>
+      <a href="#categories">▦ <span>التصنيفات</span></a>
+      <a href="#reviews">★ <span>مراجعات القرّاء</span></a>
+    </nav>
+    <div class="store-sidebar-divider"></div>
+    <button class="store-sidebar-action" data-action="open-cart">🛍 <span>سلة المشتريات</span><b id="sidebar-cart-count">0</b></button>
+    <button class="store-sidebar-action" data-action="open-wishlist">♡ <span>قائمة الأمنيات</span></button>
+    <button class="store-sidebar-action" data-action="account">♙ <span id="sidebar-account-label">تسجيل الدخول</span></button>
+    <button class="store-sidebar-action" data-action="toggle-theme">◐ <span>الوضع الليلي / النهاري</span></button>
+    <button id="sidebar-admin-entry" class="store-sidebar-action store-sidebar-admin hidden" data-action="open-admin" title="فتح لوحة الإدارة والتحقق من صلاحية المالك">⚙ <span>لوحة الإدارة</span></button>
+    <div class="store-sidebar-foot">اقرأ على مهل، واختر حكايتك القادمة. ✿</div>
+  </aside>
 
-    <!-- المحتوى الرئيسي -->
-    <main>
-        <div class="hero">
-            <h1>Velvet</h1>
-            <p>كتب تستحق القراءة، بتوصلك لحد باب البيت</p>
-        </div>
-        <section id="books">
-            <h2>📚 جميع الكتب</h2>
-            <div class="grid" id="grid"></div>
-        </section>
-    </main>
+  <main id="storefront">
+    <section id="home" class="hero section-shell">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="eyebrow-flower">✿</span> مساحة هادئة لعشاق القراءة</span>
+        <h1>كل حكاية جميلة<br /><em>تبدأ من هنا.</em></h1>
+        <p>اكتشف عالماً من الكتب المختارة بعناية، واجعل لكل يوم صفحة جديدة مع Velvet.</p>
+        <div class="hero-actions"><a class="button button-primary" href="#all-books">اكتشف الكتب <span>←</span></a><a class="text-link" href="#categories">تصفّح التصنيفات</a></div>
+        <div class="hero-note"><span>✿</span> اقرأ على مهل، واختر حكايتك القادمة.</div>
+      </div>
+      <div class="hero-art" aria-label="كتب وزهور لافندر">
+        <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
+        <div class="hero-flower flower-a">✿</div><div class="hero-flower flower-b">❀</div><div class="hero-flower flower-c">✿</div>
+        <div class="book-stack"><div class="book book-back"><span>THE ART OF<br />SLOW LIVING</span></div><div class="book book-middle"><span>little<br />stories</span></div><div class="book book-front"><span>Velvet<br /><small>BOOK COLLECTION</small></span></div></div>
+        <div class="hero-caption">A little world between pages</div>
+      </div>
+    </section>
 
-    <!-- نافذة تفاصيل الكتاب -->
-    <dialog id="bookModal">
-        <form method="dialog"><button class="x">✖</button></form>
-        <div id="bookDetails"></div>
-    </dialog>
+    <section id="new-books" class="section-shell content-section">
+      <div class="section-heading"><div><span class="section-kicker">وصلت إلى المكتبة</span><h2>أضيف حديثاً</h2><p>كتب جديدة انضمت إلى اختيارات Velvet خلال آخر 7 أيام.</p></div><a class="text-link" href="#all-books">كل الكتب ←</a></div>
+      <div id="new-books-grid" class="book-grid"><div class="loading-line">جارٍ تحميل الكتب…</div></div>
+    </section>
 
-    <!-- نافذة تسجيل الدخول/الإنشاء -->
-    <dialog id="authModal">
-        <form method="dialog"><button class="x">✖</button></form>
-        <div id="authContent"></div>
-    </dialog>
+    <section id="all-books" class="section-shell content-section">
+      <div class="section-heading"><div><span class="section-kicker">اختيارات لكل مزاج</span><h2>اكتشف مكتبتنا</h2><p>ابحث عن الكتاب الذي يشبه فضولك اليوم.</p></div></div>
+      <div class="catalog-tools"><label class="search-field"><span>⌕</span><input id="book-search" type="search" placeholder="ابحث باسم الكتاب أو الكاتب..." autocomplete="off" /></label><select id="category-filter" aria-label="تصفية حسب التصنيف"><option value="all">كل التصنيفات</option></select><select id="sort-books" aria-label="ترتيب الكتب"><option value="newest">الأحدث أولاً</option><option value="price-low">السعر: من الأقل للأعلى</option><option value="price-high">السعر: من الأعلى للأقل</option><option value="rating">الأعلى تقييماً</option></select></div>
+      <div id="all-books-grid" class="book-grid"><div class="loading-line">جارٍ تحميل الكتب…</div></div>
+      <div id="books-empty" class="empty-state hidden"><span>✿</span><h3>لم نعثر على كتب هنا</h3><p>جرّب تغيير كلمة البحث أو التصنيف.</p></div>
+    </section>
 
-    <!-- ربط ملف JS المنفصل -->
-    <script src="app.js"></script>
+    <section id="categories" class="section-shell content-section category-section">
+      <div class="section-heading"><div><span class="section-kicker">اختر عالمك المفضل</span><h2>تصفّح التصنيفات</h2><p>من الروايات إلى المعرفة، لكل قارئ مساحة.</p></div></div>
+      <div id="categories-grid" class="categories-grid"><div class="loading-line">جارٍ تحميل التصنيفات…</div></div>
+    </section>
+
+    <section id="discounts" class="discount-banner section-shell">
+      <div><span class="section-kicker">فرصتك لاكتشاف جديد</span><h2>حكايات تستحق أن تقترب منها.</h2><p>تصفّح الكتب التي عليها خصومات حالياً.</p><a class="button button-light" href="#all-books" data-action="show-discounts">شاهد الخصومات</a></div>
+      <div class="discount-decoration">٪<span>✿</span></div>
+    </section>
+
+    <section id="reviews" class="section-shell content-section">
+      <div class="section-heading"><div><span class="section-kicker">كلمات من قرّائنا</span><h2>Velvet Reviews</h2><p>تجارب وآراء قرّاء شاركونا رحلتهم مع الكتب.</p></div></div>
+      <div id="reviews-grid" class="reviews-grid"><div class="loading-line">جارٍ تحميل المراجعات…</div></div>
+    </section>
+
+    <section class="about-section section-shell">
+      <div class="about-flower">❀</div><div><span class="section-kicker">عن Velvet</span><h2>أكثر من مجرد متجر كتب.</h2><p>Velvet مساحة تجمع الكتب التي تلهم، والحكايات التي تترك أثراً. نؤمن أن اختيار كتاب جيد هو بداية وقت جميل مع نفسك.</p></div>
+    </section>
+  </main>
+
+  <aside id="cart-panel" class="side-panel" aria-label="سلة المشتريات" aria-hidden="true">
+    <div class="panel-header"><div><span class="section-kicker">اختياراتك</span><h2>سلة المشتريات</h2></div><button class="icon-button" data-action="close-panels" aria-label="إغلاق">✕</button></div>
+    <div id="cart-items" class="panel-body"></div><div id="cart-summary" class="cart-summary"></div>
+  </aside>
+  <aside id="wishlist-panel" class="side-panel" aria-label="قائمة الأمنيات" aria-hidden="true">
+    <div class="panel-header"><div><span class="section-kicker">كتب نالت إعجابك</span><h2>قائمة أمنياتي</h2></div><button class="icon-button" data-action="close-panels" aria-label="إغلاق">✕</button></div><div id="wishlist-items" class="panel-body"></div>
+  </aside>
+  <div id="panel-scrim" class="panel-scrim" data-action="close-panels"></div>
+
+  <div id="modal-root" class="modal-root" aria-hidden="true"></div>
+
+  <footer class="site-footer">
+    <div class="footer-main section-shell"><div class="footer-brand"><a class="brand" href="#home"><span class="brand-mark">V</span><span>Velvet</span></a><p>كل صفحة بداية لحكاية جديدة.</p></div><div class="footer-links"><h3>روابط مهمة</h3><a href="#all-books">كل الكتب</a><a href="#categories">التصنيفات</a><a href="#reviews">مراجعات القرّاء</a><button class="footer-text-button" data-action="show-policy">سياسة الاستبدال والاسترجاع</button></div><div class="footer-links"><h3>تواصل معنا</h3><div id="social-links" class="social-links"><span>روابط التواصل ستظهر هنا بعد إعدادها.</span></div></div></div>
+    <div class="footer-bottom"><span>© <span id="footer-year"></span> Velvet. جميع الحقوق محفوظة.</span><span>صُنع بحب لعشاق الكتب ✿</span></div>
+  </footer>
+
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

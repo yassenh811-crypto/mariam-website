@@ -1,8 +1,30 @@
 {
   "name": "velvet-bookstore",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
-  "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview" },
-  "dependencies": { "@supabase/supabase-js": "^2.45.0" },
-  "devDependencies": { "vite": "^5.4.0" }
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.7"
+  },
+  "description": "مشروع متجر كتب عربي باتجاه RTL، مبني باستخدام HTML وCSS وJavaScript وVite وSupabase. الملفات الأساسية التي ستعدّل تصميم الموقع ووظائفه هي `index.html` و`style.css` و`app.js`.",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yassenh811-crypto/mariam-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yassenh811-crypto/mariam-website/issues"
+  },
+  "homepage": "https://github.com/yassenh811-crypto/mariam-website#readme"
 }
