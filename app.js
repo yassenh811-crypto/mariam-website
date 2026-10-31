@@ -1,8 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-// علامة تؤكد أن ملف التطبيق بدأ التحميل بنجاح.
-window.__VELVET_APP_STARTED__ = true;
-
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const hasConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
@@ -30,9 +27,6 @@ let resumeCartAfterAuth = false;
 let cart = readStore('velvet_cart', []);
 let wishlist = readStore('velvet_wishlist', []);
 let currentAdminTab = 'overview';
-const pageScrollLocks = new Set();
-let lockedPageScrollY = 0;
-let pendingScrollRestoreY = null;
 
 function toast(message, type = 'success') {
   const region = $('#toast-region');
@@ -44,36 +38,8 @@ function toast(message, type = 'success') {
   window.setTimeout(() => item.remove(), 3600);
 }
 
-function lockPageScroll(reason) {
-  if (pageScrollLocks.has(reason)) return;
-  const shouldCapturePosition = pageScrollLocks.size === 0;
-  pageScrollLocks.add(reason);
-  if (!shouldCapturePosition) return;
-  lockedPageScrollY = pendingScrollRestoreY ?? (window.scrollY || document.documentElement.scrollTop || 0);
-  pendingScrollRestoreY = null;
-  document.documentElement.classList.add('overlay-scroll-locked');
-  document.body.classList.add('overlay-scroll-locked');
-  document.body.style.top = `-${lockedPageScrollY}px`;
-}
-
-function unlockPageScroll(reason) {
-  if (!pageScrollLocks.delete(reason) || pageScrollLocks.size > 0) return;
-  const restoreY = lockedPageScrollY;
-  pendingScrollRestoreY = restoreY;
-  document.documentElement.classList.remove('overlay-scroll-locked');
-  document.body.classList.remove('overlay-scroll-locked');
-  document.body.style.top = '';
-  requestAnimationFrame(() => {
-    if (pageScrollLocks.size === 0 && pendingScrollRestoreY === restoreY) {
-      window.scrollTo(0, restoreY);
-      pendingScrollRestoreY = null;
-    }
-  });
-}
-
 function showModal(content, extraClass = '') {
   const root = $('#modal-root');
-  lockPageScroll('modal');
   root.innerHTML = `<div class="modal-backdrop" data-action="close-modal"><section class="modal-card ${extraClass}" role="dialog" aria-modal="true">${content}</section></div>`;
   root.classList.add('is-open');
   root.setAttribute('aria-hidden', 'false');
@@ -86,7 +52,6 @@ function closeModal() {
   root.setAttribute('aria-hidden', 'true');
   root.innerHTML = '';
   document.body.classList.remove('modal-open');
-  unlockPageScroll('modal');
 }
 
 function openPanel(id) {
@@ -97,7 +62,6 @@ function openPanel(id) {
   panel.setAttribute('aria-hidden', 'false');
   $('#panel-scrim').classList.add('is-visible');
   document.body.classList.add('panel-open');
-  lockPageScroll('panel');
 }
 
 function closePanels() {
@@ -107,7 +71,6 @@ function closePanels() {
   });
   $('#panel-scrim')?.classList.remove('is-visible');
   document.body.classList.remove('panel-open');
-  unlockPageScroll('panel');
 }
 
 function openStoreSidebar() {
@@ -118,17 +81,15 @@ function openStoreSidebar() {
   $('#store-sidebar-scrim')?.classList.add('is-visible');
   $('#store-sidebar-toggle')?.setAttribute('aria-expanded', 'true');
   document.body.classList.add('store-sidebar-open');
-  lockPageScroll('store-sidebar');
 }
 
-function closeStoreSidebar({ keepScrollLocked = false } = {}) {
+function closeStoreSidebar() {
   const sidebar = $('#store-sidebar');
   sidebar?.classList.remove('is-open');
   sidebar?.setAttribute('aria-hidden', 'true');
   $('#store-sidebar-scrim')?.classList.remove('is-visible');
   $('#store-sidebar-toggle')?.setAttribute('aria-expanded', 'false');
   document.body.classList.remove('store-sidebar-open');
-  if (!keepScrollLocked) unlockPageScroll('store-sidebar');
 }
 
 function storageUrl(path, bucket = 'book-covers') {
@@ -245,9 +206,8 @@ function refreshHeader() {
   if (button) button.textContent = accountLabel;
   const sidebarLabel = $('#sidebar-account-label');
   if (sidebarLabel) sidebarLabel.textContent = accountLabel;
-  // لا يظهر مدخل لوحة الإدارة إلا للحساب الذي يحمل دور المالك فعلياً.
-  const isOwner = Boolean(currentUser && profile?.role === 'owner');
-  $('#sidebar-admin-entry')?.classList.toggle('hidden', !isOwner);
+  // يظهر مدخل لوحة الإدارة لصاحبة المتجر فقط بعد تحميل دور الحساب من قاعدة البيانات.
+  $('#sidebar-admin-entry')?.classList.toggle('hidden', profile?.role !== 'owner');
 }
 
 async function loadPublicData() {
@@ -499,31 +459,26 @@ async function uploadCover(file, folder = 'books') {
   return path;
 }
 
-async function requireOwnerPermission() {
-  if (!hasConfig || !currentUser) {
-    toast('سجّل الدخول بحساب صاحبة المتجر أولاً.', 'error');
-    return false;
+async function openAdmin() {
+  if (!hasConfig) return toast('اربط المتجر بقاعدة بيانات Supabase أولاً.', 'error');
+  if (!currentUser) {
+    closeStoreSidebar();
+    accountModal();
+    toast('سجّل الدخول بحساب صاحب المتجر أولاً.');
+    return;
   }
+  // أعد قراءة الدور من Supabase عند الضغط، حتى لا نعتمد على بيانات قديمة في الواجهة.
   try {
     await loadProfile();
   } catch (error) {
     console.error('Owner permission check failed:', error);
-    toast('تعذر التحقق من صلاحية الحساب. راجع اتصال Supabase وبيانات الحساب.', 'error');
-    return false;
+    return toast('تعذر التحقق من صلاحية الحساب. راجع اتصال Supabase وبيانات الحساب.', 'error');
   }
   if (profile?.role !== 'owner') {
-    refreshHeader();
-    toast('هذا القسم مخصص لصاحبة المتجر فقط.', 'error');
-    return false;
+    return toast('هذا الحساب ليس لديه صلاحية المالك. يجب تفعيل role = owner من Supabase.', 'error');
   }
-  return true;
-}
-
-async function openAdmin() {
-  if (!(await requireOwnerPermission())) return false;
   currentAdminTab = 'overview';
   await renderAdmin();
-  return true;
 }
 
 function adminShell(content) {
@@ -533,7 +488,7 @@ function adminShell(content) {
 }
 
 async function renderAdmin() {
-  if (!(await requireOwnerPermission())) { closeModal(); return; }
+  if (profile?.role !== 'owner') return toast('غير مصرح بالدخول.', 'error');
   showModal(adminShell('<div class="loading-line">جارٍ تحميل البيانات…</div>'), 'admin-modal');
   const content = $('#admin-content');
   try {
@@ -681,15 +636,13 @@ function openPolicy(){
 
 async function handleAction(actionElement) {
   const action=actionElement.dataset.action;const id=actionElement.dataset.id;
-  const ownerOnlyActions = new Set(['admin-tab','admin-add-book','edit-book','delete-book','admin-add-category','edit-category','delete-category','view-order','review-payment','toggle-review','admin-chat']);
-  if (ownerOnlyActions.has(action) && !(await requireOwnerPermission())) { closeModal(); return; }
   if(action==='close-modal'){closeModal();}
   else if(action==='toggle-store-sidebar'){const isOpen=$('#store-sidebar')?.classList.contains('is-open');isOpen?closeStoreSidebar():openStoreSidebar();}
   else if(action==='close-store-sidebar')closeStoreSidebar();
   else if(action==='close-panels')closePanels();
-  else if(action==='open-cart'){closeStoreSidebar({keepScrollLocked:true});openPanel('cart-panel');unlockPageScroll('store-sidebar');}
-  else if(action==='open-wishlist'){closeStoreSidebar({keepScrollLocked:true});openPanel('wishlist-panel');unlockPageScroll('store-sidebar');}
-  else if(action==='account'){closeStoreSidebar({keepScrollLocked:true});accountModal();unlockPageScroll('store-sidebar');}
+  else if(action==='open-cart'){closeStoreSidebar();openPanel('cart-panel');}
+  else if(action==='open-wishlist'){closeStoreSidebar();openPanel('wishlist-panel');}
+  else if(action==='account'){closeStoreSidebar();accountModal();}
   else if(action==='toggle-theme'){const theme=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=theme;localStorage.setItem('velvet_theme',theme);}
   else if(action==='open-search'){$('#book-search').focus();document.getElementById('all-books').scrollIntoView({behavior:'smooth'});}
   else if(action==='add-cart')addToCart(id);
@@ -705,7 +658,7 @@ async function handleAction(actionElement) {
   else if(action==='forgot-password'){const email=$('#auth-form [name="email"]').value;if(!email)return toast('اكتب بريدك الإلكتروني أولاً.','error');const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});if(error)toast(error.message,'error');else toast('تم إرسال رابط استعادة كلمة المرور إلى بريدك.');}
   else if(action==='logout')await signOut();
   else if(action==='account-tab')await renderAccountTab(actionElement.dataset.tab);
-  else if(action==='open-admin'){closeStoreSidebar({keepScrollLocked:true});const opened=await openAdmin();unlockPageScroll('store-sidebar');if(!opened)closeStoreSidebar();}
+  else if(action==='open-admin'){closeStoreSidebar();await openAdmin();}
   else if(action==='admin-tab'){currentAdminTab=actionElement.dataset.tab;await renderAdmin();}
   else if(action==='admin-add-book')adminBookForm();
   else if(action==='edit-book'){const {data,error}=await supabase.from('books').select('*').eq('id',id).single();if(error)toast(error.message,'error');else adminBookForm(data);}
@@ -723,13 +676,7 @@ async function handleAction(actionElement) {
 }
 
 $('#store-sidebar')?.addEventListener('click', (event) => {
-  const link = event.target.closest('a[href^="#"]');
-  if (!link) return;
-  const destination = document.querySelector(link.getAttribute('href'));
-  if (!destination) return;
-  event.preventDefault();
-  closeStoreSidebar();
-  requestAnimationFrame(() => destination.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  if (event.target.closest('a')) closeStoreSidebar();
 });
 
 document.addEventListener('click', async (event) => {
@@ -755,8 +702,8 @@ document.addEventListener('submit', async (event) => {
     event.preventDefault();const fd=new FormData(form);const {data,error}=await supabase.from('profiles').update({full_name:String(fd.get('full_name')),phone:String(fd.get('phone')),address:String(fd.get('address'))}).eq('id',currentUser.id).select().single();if(error)toast(error.message,'error');else{profile={...profile,...data};refreshHeader();toast('تم حفظ بياناتك.');}
   }else if(form.id==='checkout-form'){event.preventDefault();await processCheckout(form);}
   else if(form.id==='review-form'){event.preventDefault();await submitReview(form);}
-  else if(form.id==='admin-book-form'){event.preventDefault();if(!(await requireOwnerPermission()))return;await saveAdminBook(form);}
-  else if(form.id==='category-form'){event.preventDefault();if(!(await requireOwnerPermission()))return;await saveCategory(form);}
+  else if(form.id==='admin-book-form'){event.preventDefault();await saveAdminBook(form);}
+  else if(form.id==='category-form'){event.preventDefault();await saveCategory(form);}
   else if(form.id==='settings-form'){
     event.preventDefault();const fd=new FormData(form);try{for(const [key,value] of fd.entries()){const {error}=await supabase.from('store_settings').upsert({key,value:String(value),is_public:true},{onConflict:'key'});if(error)throw error;}toast('تم حفظ إعدادات المتجر.');await loadPublicData();}catch(error){toast(error.message,'error');}
   }else if(form.id==='resubmit-proof-form'){
@@ -773,7 +720,7 @@ document.addEventListener('submit', async (event) => {
 document.addEventListener('change', async (event) => {
   const target=event.target;
   if(target.matches('#book-search,#category-filter,#sort-books'))renderCatalog();
-  if(target.matches('[data-order-status]')){if(await requireOwnerPermission())await updateOrderStatus(target.dataset.orderStatus,target.value);}
+  if(target.matches('[data-order-status]'))await updateOrderStatus(target.dataset.orderStatus,target.value);
   if(target.matches('#order-search')){
     const query=target.value.trim().toLowerCase();$$('[data-order-search]').forEach((card)=>card.classList.toggle('hidden',!card.dataset.orderSearch.includes(query)));
   }
@@ -805,13 +752,4 @@ async function init() {
   });
 }
 
-init().catch((error) => {
-  console.error('Velvet startup error:', error);
-  const intro = document.getElementById('intro');
-  intro?.classList.add('intro-hidden');
-  window.setTimeout(() => intro?.remove(), 750);
-  const target = document.getElementById('all-books-grid');
-  if (target) {
-    target.innerHTML = '<div class="setup-note"><strong>حصل خطأ أثناء تشغيل المتجر.</strong><p>افتح أدوات المطور ثم Console لمعرفة السبب، وتأكد من إعداد متغيرات Supabase في الاستضافة.</p></div>';
-  }
-});
+init();
