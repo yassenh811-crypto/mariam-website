@@ -1,12 +1,16 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl =
+  (import.meta.env.VITE_SUPABASE_URL || '').trim();
 
-export const supabase = createClient(
-  supabaseUrl,
-  supabaseKey
-);
+const supabaseKey =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+
+const hasConfig = Boolean(supabaseUrl && supabaseKey);
+
+export const supabase = hasConfig
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const money = (value) => `${Number(value || 0).toLocaleString('ar-EG', { maximumFractionDigits: 2 })} ج.م`;
