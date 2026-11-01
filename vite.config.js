@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  server: { host: '0.0.0.0' },
-  preview: { host: '0.0.0.0' },
-  build: { outDir: 'dist', sourcemap: false }
+  base: '/mariam-website/',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true
+  }
 });
