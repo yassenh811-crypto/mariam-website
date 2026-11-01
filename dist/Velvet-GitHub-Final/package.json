@@ -1,0 +1,17 @@
+{
+  "name": "velvet-bookstore",
+  "private": true,
+  "version": "1.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/prepare-static-css.mjs && vite --host 0.0.0.0",
+    "build": "node scripts/prepare-static-css.mjs && vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.7"
+  }
+}
