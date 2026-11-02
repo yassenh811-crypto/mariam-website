@@ -1,10 +1,8 @@
-
 name: Deploy Velvet to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -13,36 +11,28 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
+  group: pages
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Install dependencies
-        working-directory: Velvet-GitHub-Final
-        run: npm install --no-audit --no-fund
-
-      - name: Build website
-        working-directory: Velvet-GitHub-Final
-        run: npm run build
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload website artifact
-        uses: actions/upload-pages-artifact@v3
+          cache: npm
+      - run: npm ci
+      # المفتاح publishable عام بطبيعته (يظهر داخل ملف الموقع أصلاً).
+      # لو أضفت Secrets في GitHub تُستخدم هي أولاً، وإلا تُستخدم القيم الاحتياطية.
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://dfyctdfxwwokszvvgdix.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_atxSXfoMGnv7Kt1RDmyJmg_lHfi1O81' }}
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: Velvet-GitHub-Final/dist
+          path: dist
 
   deploy:
     needs: build
@@ -51,6 +41,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4

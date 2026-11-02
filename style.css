@@ -87,3 +87,118 @@
 @media(max-width:390px){
   .site-header{padding-left:60px;}
 }
+
+/* ==========================================================
+   Velvet v2 — طبقة التصميم الجديدة (aurora + glass + motion)
+   ========================================================== */
+:root{--grad:linear-gradient(135deg,#b794d6 0%,#8f70a5 45%,#5c426d 100%);--glow:0 18px 50px rgba(128,98,148,.35);--ease:cubic-bezier(.2,.8,.2,1)}
+:root[data-theme="dark"]{--glow:0 18px 55px rgba(155,123,179,.28)}
+::selection{background:#b794d6;color:#fff}
+html{scrollbar-width:thin;scrollbar-color:var(--lavender) transparent}
+::-webkit-scrollbar{width:10px}::-webkit-scrollbar-thumb{background:linear-gradient(var(--lavender),var(--lavender-deep));border-radius:10px}
+
+/* خلفية Aurora متحركة */
+body{position:relative;overflow-x:hidden}
+body::before,body::after{content:"";position:fixed;z-index:-1;width:60vmax;height:60vmax;border-radius:50%;filter:blur(90px);opacity:.38;pointer-events:none;animation:auroraMove 22s ease-in-out infinite alternate}
+body::before{top:-25vmax;right:-20vmax;background:radial-gradient(circle,#d4b8ee,transparent 65%)}
+body::after{bottom:-28vmax;left:-22vmax;background:radial-gradient(circle,#f0b8d8,transparent 65%);animation-delay:-11s}
+:root[data-theme="dark"] body::before{background:radial-gradient(circle,#6b3fa0,transparent 65%);opacity:.5}
+:root[data-theme="dark"] body::after{background:radial-gradient(circle,#8a2f6a,transparent 65%);opacity:.35}
+@keyframes auroraMove{to{transform:translate(8vmax,6vmax) scale(1.15)}}
+
+/* شريط تقدم التمرير */
+.scroll-progress{position:fixed;top:0;right:0;height:3px;width:0;background:var(--grad);z-index:2000;box-shadow:0 0 12px #b794d6;transition:width .1s linear}
+
+/* الهيدر زجاجي */
+.site-header{background:color-mix(in srgb,var(--bg) 70%,transparent);backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);transition:box-shadow .3s,padding .3s}
+.site-header.is-scrolled{box-shadow:0 10px 40px rgba(76,49,91,.14)}
+.brand{font-family:'Playfair Display','Cairo',serif;font-weight:700;font-size:21px;letter-spacing:.5px}
+.brand-mark{background:var(--grad);box-shadow:0 8px 22px rgba(128,98,148,.45);transition:transform .5s var(--ease)}
+.brand:hover .brand-mark{transform:rotate(-12deg) scale(1.08)}
+.main-nav a{position:relative;padding:6px 2px;transition:color .2s}
+.main-nav a::after{content:"";position:absolute;inset-inline:0;bottom:0;height:2px;border-radius:2px;background:var(--grad);transform:scaleX(0);transition:transform .35s var(--ease)}
+.main-nav a:hover{color:var(--purple-dark)}.main-nav a:hover::after{transform:scaleX(1)}
+.icon-button{transition:transform .25s var(--ease),background .2s,box-shadow .25s}
+.icon-button:hover{transform:translateY(-2px) scale(1.07);box-shadow:0 8px 20px rgba(128,98,148,.25)}
+
+/* الأزرار */
+.button{position:relative;overflow:hidden;transition:transform .3s var(--ease),box-shadow .3s}
+.button-primary{background:var(--grad);box-shadow:var(--glow)}
+.button:hover{transform:translateY(-3px)}
+.button-primary::after{content:"";position:absolute;top:0;bottom:0;width:60%;left:-80%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);transition:left .7s var(--ease)}
+.button-primary:hover::after{left:130%}
+
+/* الواجهة الرئيسية */
+.hero{position:relative}
+.eyebrow{background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid var(--line);backdrop-filter:blur(10px);box-shadow:0 6px 24px rgba(128,98,148,.15)}
+.eyebrow-flower{display:inline-block;animation:spinSlow 8s linear infinite}
+@keyframes spinSlow{to{transform:rotate(360deg)}}
+.hero h1{font-size:clamp(42px,6vw,76px);line-height:1.25;letter-spacing:-2px}
+.hero h1 em{font-style:normal;background:linear-gradient(100deg,#9d6fd0,#e07cb4,#7a5bc0,#9d6fd0);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shine 6s linear infinite}
+@keyframes shine{to{background-position:-250% 0}}
+.hero-copy>*{animation:riseIn .9s var(--ease) both}
+.hero-copy>*:nth-child(2){animation-delay:.1s}.hero-copy>*:nth-child(3){animation-delay:.2s}.hero-copy>*:nth-child(4){animation-delay:.3s}.hero-copy>*:nth-child(5){animation-delay:.4s}
+@keyframes riseIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+.hero-art{perspective:900px}
+.book-stack{animation:floatBooks 7s ease-in-out infinite;transform-style:preserve-3d;filter:drop-shadow(0 35px 40px rgba(70,40,95,.35))}
+@keyframes floatBooks{0%,100%{translate:0 0}50%{translate:0 -16px}}
+.hero-orbit{animation:spinSlow 40s linear infinite}.orbit-two{animation-duration:65s;animation-direction:reverse}
+.hero-flower{animation:floatBooks 5s ease-in-out infinite;text-shadow:0 0 25px #c9a6ee}
+.flower-b{animation-delay:-1.7s}.flower-c{animation-delay:-3.2s}
+.hero-caption{letter-spacing:3px;text-transform:uppercase;font-size:11px;opacity:.75}
+
+/* شريط متحرك */
+.marquee{overflow:hidden;border-block:1px solid var(--line);background:color-mix(in srgb,var(--surface) 60%,transparent);backdrop-filter:blur(8px);padding:14px 0;margin-bottom:30px;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.marquee-track{display:flex;gap:46px;width:max-content;animation:marquee 32s linear infinite;color:var(--lavender-deep);font-weight:700;font-size:15px;white-space:nowrap}
+.marquee:hover .marquee-track{animation-play-state:paused}
+@keyframes marquee{to{transform:translateX(50%)}}
+
+/* العناوين */
+.section-heading h2{position:relative;display:inline-block}
+.section-heading h2::after{content:"";display:block;height:4px;width:46px;margin-top:8px;border-radius:4px;background:var(--grad);transition:width .5s var(--ease)}
+.section-heading:hover h2::after{width:100%}
+
+/* كروت الكتب */
+.book-card{transition:transform .45s var(--ease),box-shadow .45s var(--ease),border-color .3s;transform-style:preserve-3d;will-change:transform}
+.book-card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;background:var(--grad);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .35s;pointer-events:none;z-index:3}
+.book-card:hover{box-shadow:var(--glow);transform:translateY(-8px)}
+.book-card:hover::before{opacity:1}
+.book-card:hover .book-cover{transform:scale(1.09) rotate(.6deg)}
+.book-cover-wrap::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(40,20,60,.35));opacity:0;transition:opacity .35s;pointer-events:none}
+.book-card:hover .book-cover-wrap::after{opacity:1}
+.discount-badge{background:linear-gradient(135deg,#e0527f,#b02a5c)!important;color:#fff;box-shadow:0 6px 16px rgba(176,42,92,.45);animation:pulseBadge 2.4s ease-in-out infinite}
+@keyframes pulseBadge{50%{transform:scale(1.07)}}
+.favorite-button{transition:transform .3s var(--ease),background .2s;backdrop-filter:blur(8px)}
+.favorite-button:hover{transform:scale(1.2) rotate(12deg)}
+.favorite-button.is-favorite{color:#e0a82e;text-shadow:0 0 14px #f5c85c}
+
+/* التصنيفات والمراجعات */
+.category-card{transition:transform .4s var(--ease),box-shadow .4s,background .3s,color .3s}
+.category-card:hover{transform:translateY(-6px) scale(1.03);box-shadow:var(--glow);background:var(--grad);color:#fff;border-color:transparent}
+.category-card:hover .category-flower{animation:spinSlow 3s linear infinite}
+.review-card{transition:transform .4s var(--ease),box-shadow .4s;position:relative}
+.review-card::before{content:"”";position:absolute;top:2px;left:18px;font:700 70px/1 'Playfair Display',serif;color:var(--lavender);opacity:.35}
+.review-card:hover{transform:translateY(-5px);box-shadow:var(--glow)}
+
+/* بانر الخصومات */
+.discount-banner{background:linear-gradient(115deg,#4a2f5e,#8a5fb0,#c07ab0,#6a4890);background-size:300% 300%;animation:gradShift 12s ease infinite;box-shadow:var(--glow)}
+@keyframes gradShift{50%{background-position:100% 50%}}
+.discount-decoration{animation:floatBooks 6s ease-in-out infinite}
+
+/* من نحن + الفوتر */
+.about-flower{animation:spinSlow 30s linear infinite}
+.site-footer{background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--lavender) 18%,transparent));border-top:1px solid var(--line)}
+.social-links a{transition:transform .25s,color .2s}.social-links a:hover{transform:translateY(-3px);color:var(--lavender-deep)}
+
+/* النوافذ والبانلز */
+.modal-card{animation:modalPop .45s var(--ease) both;box-shadow:0 30px 90px rgba(40,20,60,.4)}
+@keyframes modalPop{from{opacity:0;transform:translateY(24px) scale(.95)}to{opacity:1;transform:none}}
+.toast{backdrop-filter:blur(14px);box-shadow:0 12px 34px rgba(60,35,80,.3);animation:riseIn .4s var(--ease) both}
+.setup-note{grid-column:1/-1;padding:28px;border:1px dashed var(--lavender);border-radius:20px;background:var(--surface-soft);text-align:center;line-height:1.9}
+
+/* ظهور تدريجي عند التمرير */
+.reveal{opacity:0;transform:translateY(34px) scale(.98);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+.reveal.is-in{opacity:1;transform:none}
+
+@media (max-width:760px){body::before,body::after{filter:blur(60px)}.hero h1{font-size:40px}.marquee-track{font-size:13px;gap:30px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}

@@ -20,6 +20,8 @@
 
 <body>
 
+  <div id="scroll-progress" class="scroll-progress"></div>
+
   <!-- شاشة الترحيب -->
   <div id="intro" class="intro" aria-hidden="true">
     <div class="intro-flowers intro-flowers-right">✿ ❀ ✿</div>
@@ -144,6 +146,14 @@
       </div>
 
     </section>
+
+    <!-- شريط متحرك -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>✿ روايات</span><span>❀ تطوير الذات</span><span>✿ تاريخ</span><span>❀ شعر</span><span>✿ علوم</span><span>❀ كتب أطفال</span><span>✿ فلسفة</span><span>❀ أدب عالمي</span>
+        <span>✿ روايات</span><span>❀ تطوير الذات</span><span>✿ تاريخ</span><span>❀ شعر</span><span>✿ علوم</span><span>❀ كتب أطفال</span><span>✿ فلسفة</span><span>❀ أدب عالمي</span>
+      </div>
+    </div>
 
     <!-- الكتب المضافة حديثاً -->
     <section id="new-books" class="section-shell content-section">
@@ -344,6 +354,7 @@
 
   <!-- ملف تشغيل الموقع -->
   <script type="module" src="./app.js"></script>
+  <script type="module" src="./fx.js"></script>
 
 </body>
 </html>

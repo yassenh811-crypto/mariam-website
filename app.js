@@ -1,9 +1,9 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const hasConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-const supabase = hasConfig ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const supabase = hasConfig ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -227,7 +227,12 @@ async function loadPublicData() {
       supabase.from('book_review_stats').select('*'),
       supabase.from('store_settings').select('key,value').eq('is_public', true)
     ]);
-    if (bookRes.error) throw bookRes.error;
+    if (bookRes.error) {
+      console.warn('book_catalog failed, falling back to books table', bookRes.error);
+      const fallback = await supabase.from('books').select('*').order('created_at', { ascending: false });
+      if (fallback.error) throw bookRes.error;
+      bookRes.data = fallback.data;
+    }
     if (categoryRes.error) throw categoryRes.error;
     books = bookRes.data || [];
     categories = categoryRes.data || [];
@@ -240,6 +245,11 @@ async function loadPublicData() {
   } catch (error) {
     console.error(error);
     toast(`تعذر تحميل بيانات المتجر: ${error.message || 'خطأ غير معروف'}`, 'error');
+    const hint = /fetch|network|failed/i.test(String(error.message)) ? 'تعذر الوصول إلى Supabase: تأكد أن المشروع غير متوقف (Paused) من لوحة Supabase وأن الإنترنت أو الـ DNS لا يحجب *.supabase.co.' : 'تأكد من تشغيل ملف supabase/schema.sql ومن أن سياسات RLS تسمح بقراءة الكتب والتصنيفات.';
+    ['new-books-grid', 'all-books-grid', 'categories-grid', 'reviews-grid'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = `<div class="setup-note"><strong>تعذر تحميل البيانات.</strong><p>${escapeHtml(error.message || '')}</p><p>${hint}</p><button class="button button-soft button-small" onclick="location.reload()">إعادة المحاولة</button></div>`;
+    });
   }
 }
 
