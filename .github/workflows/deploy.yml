@@ -1,3 +1,4 @@
+```yaml
 name: Deploy Velvet to GitHub Pages
 
 on:
@@ -18,6 +19,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Velvet-GitHub-Final
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,15 +44,16 @@ jobs:
       - name: Upload website artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: Velvet-GitHub-Final/dist
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: $DIL0
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+```
