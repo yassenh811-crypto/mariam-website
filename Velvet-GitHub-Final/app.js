@@ -1,27 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const supabaseUrl = (
-  import.meta.env.VITE_SUPABASE_URL || ''
-).trim();
-
-const supabaseKey = (
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-).trim();
-
-// التأكد من وجود بيانات الاتصال
-const hasConfig = Boolean(
-  supabaseUrl && supabaseKey
-);
-
-// إنشاء الاتصال عند وجود البيانات فقط
-export const supabase = hasConfig
-  ? createClient(supabaseUrl, supabaseKey)
-  : null;
-
-console.log('Velvet Supabase:', {
-  urlLoaded: Boolean(supabaseUrl),
-  keyLoaded: Boolean(supabaseKey)
-});
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const hasConfig = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+const supabase = hasConfig ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
