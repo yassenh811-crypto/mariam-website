@@ -628,9 +628,12 @@ async function sendChatMessage(form) {
 function stopRealtime(){realtimeChannels.forEach((channel)=>supabase?.removeChannel(channel));realtimeChannels=[];}
 
 function startOwnerRealtime(){
-  if(profile?.role!=='owner')return;
-  const channel=supabase.channel('velvet-admin-orders').on('postgres_changes',{event:'INSERT',schema:'public',table:'orders'},(payload)=>{toast(`طلب جديد وصل: ${payload.new.order_code}`);if(currentAdminTab==='orders'||currentAdminTab==='overview')renderAdmin();}).subscribe();
-  realtimeChannels.push(channel);
+  if(!supabase||profile?.role!=='owner')return;
+  if(realtimeChannels.length)return; // قناة واحدة فقط
+  try{
+    const channel=supabase.channel(`velvet-admin-orders-${Date.now()}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'orders'},(payload)=>{toast(`طلب جديد وصل: ${payload.new.order_code}`);if(currentAdminTab==='orders'||currentAdminTab==='overview')renderAdmin();}).subscribe();
+    realtimeChannels.push(channel);
+  }catch(error){console.warn('Realtime:',error);}
 }
 
 async function trackVisit(){
@@ -755,10 +758,22 @@ async function init() {
   await trackVisit();
   const {data:{session}}=await supabase.auth.getSession();
   if(session){currentUser=session.user;try{await loadProfile();await loadWishlistFromAccount();startOwnerRealtime();}catch(error){console.error(error);}}
-  supabase.auth.onAuthStateChange(async(_event,sessionNow)=>{
-    currentUser=sessionNow?.user||null;
-    try{await loadProfile();if(currentUser){await loadWishlistFromAccount();startOwnerRealtime();}else{stopRealtime();}}catch(error){console.error(error);}
-    refreshHeader();
+  let lastUserId=currentUser?.id||null;
+  supabase.auth.onAuthStateChange((event,sessionNow)=>{
+    const nextUser=sessionNow?.user||null;
+    currentUser=nextUser;
+    const nextId=nextUser?.id||null;
+    // أحداث التحديث الدوري/عودة التبويب لا تعني تغيير المستخدم: تجاهلها
+    if(nextId===lastUserId&&event!=='USER_UPDATED')return;
+    lastUserId=nextId;
+    // مهم: لا نستدعي Supabase داخل الـ callback مباشرة حتى لا يتعلق الاتصال
+    window.setTimeout(async()=>{
+      try{
+        await loadProfile();
+        if(currentUser){await loadWishlistFromAccount();startOwnerRealtime();}else{stopRealtime();}
+      }catch(error){console.error(error);}
+      refreshHeader();
+    },0);
   });
 }
 
