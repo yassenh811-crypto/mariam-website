@@ -699,7 +699,7 @@ document.addEventListener('click', async (event) => {
 
 document.addEventListener('submit', async (event) => {
   const form=event.target;
-  if(form.id==='auth-form'){
+  if(form.getAttribute('id')==='auth-form'){
     event.preventDefault();if(!supabase)return toast('أكمل إعداد Supabase أولاً.','error');
     const fd=new FormData(form);const mode=fd.get('mode');
     try{
@@ -711,15 +711,15 @@ document.addEventListener('submit', async (event) => {
         const {data,error}=await supabase.auth.signInWithPassword({email:String(fd.get('email')),password:String(fd.get('password'))});if(error)throw error;currentUser=data.user;await loadProfile();closeModal();toast('تم تسجيل الدخول بنجاح.');await loadWishlistFromAccount();startOwnerRealtime();if(resumeCartAfterAuth){resumeCartAfterAuth=false;openPanel('cart-panel');}
       }
     }catch(error){toast(error.message,'error');}
-  }else if(form.id==='profile-form'){
+  }else if(form.getAttribute('id')==='profile-form'){
     event.preventDefault();const fd=new FormData(form);const {data,error}=await supabase.from('profiles').update({full_name:String(fd.get('full_name')),phone:String(fd.get('phone')),address:String(fd.get('address'))}).eq('id',currentUser.id).select().single();if(error)toast(error.message,'error');else{profile={...profile,...data};refreshHeader();toast('تم حفظ بياناتك.');}
-  }else if(form.id==='checkout-form'){event.preventDefault();await processCheckout(form);}
-  else if(form.id==='review-form'){event.preventDefault();await submitReview(form);}
-  else if(form.id==='admin-book-form'){event.preventDefault();await saveAdminBook(form);}
-  else if(form.id==='category-form'){event.preventDefault();await saveCategory(form);}
-  else if(form.id==='settings-form'){
+  }else if(form.getAttribute('id')==='checkout-form'){event.preventDefault();await processCheckout(form);}
+  else if(form.getAttribute('id')==='review-form'){event.preventDefault();await submitReview(form);}
+  else if(form.getAttribute('id')==='admin-book-form'){event.preventDefault();await saveAdminBook(form);}
+  else if(form.getAttribute('id')==='category-form'){event.preventDefault();await saveCategory(form);}
+  else if(form.getAttribute('id')==='settings-form'){
     event.preventDefault();const fd=new FormData(form);try{for(const [key,value] of fd.entries()){const {error}=await supabase.from('store_settings').upsert({key,value:String(value),is_public:true},{onConflict:'key'});if(error)throw error;}toast('تم حفظ إعدادات المتجر.');await loadPublicData();}catch(error){toast(error.message,'error');}
-  }else if(form.id==='resubmit-proof-form'){
+  }else if(form.getAttribute('id')==='resubmit-proof-form'){
     event.preventDefault();const fd=new FormData(form);const proof=fd.get('payment_proof');const reference=String(fd.get('transaction_reference')||'').trim();const orderId=$('#modal-root [data-order-id]')?.dataset.orderId;
     const heading=$('#modal-root .modal-heading h2')?.textContent;
     const {data:ordersData,error:lookupError}=await supabase.from('orders').select('id').eq('order_code',heading).single();
@@ -727,7 +727,7 @@ document.addEventListener('submit', async (event) => {
     if(!(proof instanceof File&&proof.size>0)&&!reference)return toast('أدخل رقم العملية أو اختر صورة إثبات الدفع.','error');
     if(proof instanceof File&&proof.size>5*1024*1024)return toast('حجم الإثبات يجب ألا يتجاوز 5 ميجابايت.','error');
     try{let path=null;if(proof instanceof File&&proof.size>0){const name=proof.name.replace(/[^\w.-]/g,'_').slice(-80);path=`${currentUser.id}/${ordersData.id}/${crypto.randomUUID()}-${name}`;const {error:uploadError}=await supabase.storage.from('payment-proofs').upload(path,proof,{contentType:proof.type,upsert:false});if(uploadError)throw uploadError;}const {error}=await supabase.rpc('submit_payment_proof',{p_order_id:ordersData.id,p_proof_path:path,p_transaction_reference:reference||null});if(error)throw error;toast('تم إرسال الإثبات للمراجعة.');await showOrderDetails(ordersData.id);}catch(error){toast(error.message,'error');}
-  }else if(form.id==='chat-form'){event.preventDefault();await sendChatMessage(form);}
+  }else if(form.getAttribute('id')==='chat-form'){event.preventDefault();await sendChatMessage(form);}
 });
 
 document.addEventListener('change', async (event) => {
